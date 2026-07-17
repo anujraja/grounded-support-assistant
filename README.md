@@ -5,6 +5,7 @@
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/UI-React%20%2B%20TypeScript-149ECA?logo=react&logoColor=white)
 ![Local AI](https://img.shields.io/badge/Inference-Ollama-222222)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F5C518.svg)](LICENSE)
 
 A local-first technical-support workbench that combines hybrid retrieval, cited RAG answers, human-approved tools, and explicit escalation when the evidence is weak.
 
@@ -147,3 +148,5 @@ Production hardening would add identity and authorization, durable append-only a
 ## Author
 
 Built by [Anuj Raja](https://github.com/anujraja) as a portfolio demonstration of retrieval engineering, local AI integration, safety boundaries, and full-stack product delivery.
+
+Released under the [MIT License](LICENSE).
