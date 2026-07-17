@@ -1,0 +1,11 @@
+.git
+.github
+.env
+.ollama-demo.log
+.playwright-cli
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+backend/data
+frontend/dist
+frontend/node_modules

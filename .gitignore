@@ -1,0 +1,14 @@
+.env
+.ollama-demo.log
+.playwright-cli/
+.pytest_cache/
+*.pyc
+backend/.venv/
+backend/data/
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+__pycache__/
+.DS_Store

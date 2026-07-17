@@ -1,0 +1,9 @@
+name: grounded-support-assistant
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - nodejs=20
+  - pip
+  - pip:
+      - -r backend/requirements.txt

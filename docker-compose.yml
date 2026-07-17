@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports: ["8010:8000"]
+    env_file: .env
+    environment:
+      CHROMA_PATH: /app/data/chroma
+      SAMPLE_DOCS_PATH: /app/sample_docs
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    volumes:
+      - ./sample_docs:/app/sample_docs:ro
+      - chroma_data:/app/data
+  frontend:
+    build: ./frontend
+    ports: ["5173:80"]
+    depends_on: [backend]
+volumes:
+  chroma_data:
