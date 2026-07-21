@@ -1,0 +1,450 @@
+{
+  "schema_version": 1,
+  "metadata": {
+    "run_mode": "cold-temporary-corpus",
+    "machine": {
+      "platform": "macOS-26.5.1-arm64-arm-64bit",
+      "python": "3.12.13"
+    },
+    "models": {
+      "embedding": "all-MiniLM-L6-v2",
+      "generation": "qwen2.5:3b",
+      "reranker_enabled": false
+    },
+    "configuration": {
+      "top_k": 6,
+      "vector_weight": 0.55,
+      "reranker_enabled": false
+    },
+    "corpus": {
+      "files": [
+        "distributed-tracing.md",
+        "escalation-policy.md",
+        "javascript-sdk.md",
+        "source-maps.md",
+        "supported-versions.md"
+      ],
+      "fingerprint_sha256": "f5cea4568870dec8aa80084dfe34589d95101cccaee1c3027b0c39f2c224896d",
+      "chunks": 17
+    },
+    "evaluation_set": {
+      "path": "/Users/macbookpro/Developer/Grounded Support Assistant/backend/evaluation/cases.json",
+      "fingerprint_sha256": "8bf26f21e34ed02d02e2b77184b3a5bd11d768d7239e1c6439c20dd0775acc80"
+    },
+    "caveats": [
+      "The corpus and evaluation questions are fictional and intentionally small; results are not a production benchmark.",
+      "Semantic, BM25, and fused rankings are compared over the same complete candidate set for this corpus.",
+      "Cold means a fresh temporary Chroma corpus in this process; embedding-model download/load time is excluded from retrieval latency.",
+      "No hosted-model comparison is measured by this harness."
+    ]
+  },
+  "retrieval": {
+    "methods": {
+      "semantic": {
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "cases": 5
+      },
+      "bm25": {
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "cases": 5
+      },
+      "fused": {
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "cases": 5
+      }
+    },
+    "latency_ms": {
+      "samples": 5,
+      "median": 18.685,
+      "max": 27.49
+    }
+  },
+  "retrieval_cases": [
+    {
+      "id": "trace-header-purpose",
+      "expected_sources": [
+        "distributed-tracing.md#`sentry-trace` and `baggage`"
+      ],
+      "ranks": {
+        "semantic": [
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Trace propagation",
+          "distributed-tracing.md#Common connection failures",
+          "javascript-sdk.md#Initialization",
+          "escalation-policy.md#Escalate to a human engineer",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Safe investigation",
+          "escalation-policy.md#No destructive actions",
+          "escalation-policy.md#Audit record",
+          "javascript-sdk.md#Support examples",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Error examples"
+        ],
+        "bm25": [
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Common connection failures",
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Safe investigation",
+          "escalation-policy.md#No destructive actions",
+          "javascript-sdk.md#Initialization",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "javascript-sdk.md#Support examples",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Error examples"
+        ],
+        "fused": [
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Trace propagation",
+          "distributed-tracing.md#Common connection failures",
+          "javascript-sdk.md#Initialization",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Safe investigation",
+          "escalation-policy.md#No destructive actions",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "javascript-sdk.md#Support examples",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Error examples"
+        ]
+      },
+      "retrieval_agreement": 0.6,
+      "retrieval_ms": 27.49
+    },
+    {
+      "id": "trace-target-configuration",
+      "expected_sources": [
+        "distributed-tracing.md#Trace propagation"
+      ],
+      "ranks": {
+        "semantic": [
+          "distributed-tracing.md#Trace propagation",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Common connection failures",
+          "javascript-sdk.md#Troubleshooting",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Safe investigation",
+          "source-maps.md#Error examples",
+          "javascript-sdk.md#Support examples",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#No destructive actions",
+          "escalation-policy.md#Audit record"
+        ],
+        "bm25": [
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Safe investigation",
+          "escalation-policy.md#No destructive actions",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Common connection failures",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Error examples",
+          "javascript-sdk.md#Support examples",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record"
+        ],
+        "fused": [
+          "distributed-tracing.md#Trace propagation",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Common connection failures",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Safe investigation",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Error examples",
+          "javascript-sdk.md#Support examples",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#No destructive actions",
+          "escalation-policy.md#Audit record"
+        ]
+      },
+      "retrieval_agreement": 0.6,
+      "retrieval_ms": 25.489
+    },
+    {
+      "id": "source-map-error-code",
+      "expected_sources": [
+        "source-maps.md#Error examples"
+      ],
+      "ranks": {
+        "semantic": [
+          "source-maps.md#Error examples",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Safe investigation",
+          "distributed-tracing.md#Common connection failures",
+          "escalation-policy.md#No destructive actions",
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "javascript-sdk.md#Initialization",
+          "javascript-sdk.md#Support examples"
+        ],
+        "bm25": [
+          "source-maps.md#Error examples",
+          "source-maps.md#Safe investigation",
+          "source-maps.md#Matching release artifacts",
+          "distributed-tracing.md#Common connection failures",
+          "escalation-policy.md#No destructive actions",
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "javascript-sdk.md#Initialization",
+          "javascript-sdk.md#Support examples"
+        ],
+        "fused": [
+          "source-maps.md#Error examples",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Safe investigation",
+          "distributed-tracing.md#Common connection failures",
+          "escalation-policy.md#No destructive actions",
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "javascript-sdk.md#Initialization",
+          "javascript-sdk.md#Support examples"
+        ]
+      },
+      "retrieval_agreement": 0.6,
+      "retrieval_ms": 18.685
+    },
+    {
+      "id": "sdk-version-support",
+      "expected_sources": [
+        "javascript-sdk.md#Support examples",
+        "supported-versions.md#Demo support matrix"
+      ],
+      "ranks": {
+        "semantic": [
+          "javascript-sdk.md#Support examples",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "escalation-policy.md#No destructive actions",
+          "javascript-sdk.md#Troubleshooting",
+          "distributed-tracing.md#Trace propagation",
+          "source-maps.md#Error examples",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Common connection failures",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "source-maps.md#Safe investigation"
+        ],
+        "bm25": [
+          "javascript-sdk.md#Support examples",
+          "escalation-policy.md#No destructive actions",
+          "javascript-sdk.md#Initialization",
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Matching release artifacts",
+          "source-maps.md#Error examples",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Common connection failures",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "source-maps.md#Safe investigation"
+        ],
+        "fused": [
+          "javascript-sdk.md#Support examples",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "escalation-policy.md#No destructive actions",
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Error examples",
+          "distributed-tracing.md#`sentry-trace` and `baggage`",
+          "distributed-tracing.md#Common connection failures",
+          "escalation-policy.md#Escalate to a human engineer",
+          "escalation-policy.md#Audit record",
+          "source-maps.md#Safe investigation"
+        ]
+      },
+      "retrieval_agreement": 0.8,
+      "retrieval_ms": 16.897
+    },
+    {
+      "id": "destructive-refusal",
+      "expected_sources": [
+        "escalation-policy.md#No destructive actions"
+      ],
+      "ranks": {
+        "semantic": [
+          "escalation-policy.md#No destructive actions",
+          "source-maps.md#Safe investigation",
+          "escalation-policy.md#Audit record",
+          "escalation-policy.md#Escalate to a human engineer",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Error examples",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "javascript-sdk.md#Support examples",
+          "distributed-tracing.md#Trace propagation",
+          "distributed-tracing.md#Common connection failures",
+          "distributed-tracing.md#`sentry-trace` and `baggage`"
+        ],
+        "bm25": [
+          "escalation-policy.md#No destructive actions",
+          "distributed-tracing.md#Trace propagation",
+          "escalation-policy.md#Escalate to a human engineer",
+          "source-maps.md#Safe investigation",
+          "escalation-policy.md#Audit record",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Error examples",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "javascript-sdk.md#Support examples",
+          "distributed-tracing.md#Common connection failures",
+          "distributed-tracing.md#`sentry-trace` and `baggage`"
+        ],
+        "fused": [
+          "escalation-policy.md#No destructive actions",
+          "escalation-policy.md#Escalate to a human engineer",
+          "source-maps.md#Safe investigation",
+          "escalation-policy.md#Audit record",
+          "distributed-tracing.md#Trace propagation",
+          "javascript-sdk.md#Troubleshooting",
+          "source-maps.md#Error examples",
+          "javascript-sdk.md#Initialization",
+          "source-maps.md#Matching release artifacts",
+          "javascript-sdk.md#Support examples",
+          "distributed-tracing.md#Common connection failures",
+          "distributed-tracing.md#`sentry-trace` and `baggage`"
+        ]
+      },
+      "retrieval_agreement": 0.4,
+      "retrieval_ms": 16.055
+    }
+  ],
+  "citation_correctness": {
+    "server_boundary_checks": 10,
+    "passed": 10,
+    "unsupported_labels_rendered": 0,
+    "checks": [
+      {
+        "id": "trace-header-purpose:closed",
+        "passed": true,
+        "rendered": "Verified evidence [1]; invalid [unsupported citation removed]"
+      },
+      {
+        "id": "trace-header-purpose:incomplete",
+        "passed": true,
+        "rendered": "Incomplete invalid [unsupported citation removed]"
+      },
+      {
+        "id": "trace-target-configuration:closed",
+        "passed": true,
+        "rendered": "Verified evidence [1]; invalid [unsupported citation removed]"
+      },
+      {
+        "id": "trace-target-configuration:incomplete",
+        "passed": true,
+        "rendered": "Incomplete invalid [unsupported citation removed]"
+      },
+      {
+        "id": "source-map-error-code:closed",
+        "passed": true,
+        "rendered": "Verified evidence [1]; invalid [unsupported citation removed]"
+      },
+      {
+        "id": "source-map-error-code:incomplete",
+        "passed": true,
+        "rendered": "Incomplete invalid [unsupported citation removed]"
+      },
+      {
+        "id": "sdk-version-support:closed",
+        "passed": true,
+        "rendered": "Verified evidence [1]; invalid [unsupported citation removed]"
+      },
+      {
+        "id": "sdk-version-support:incomplete",
+        "passed": true,
+        "rendered": "Incomplete invalid [unsupported citation removed]"
+      },
+      {
+        "id": "destructive-refusal:closed",
+        "passed": true,
+        "rendered": "Verified evidence [1]; invalid [unsupported citation removed]"
+      },
+      {
+        "id": "destructive-refusal:incomplete",
+        "passed": true,
+        "rendered": "Incomplete invalid [unsupported citation removed]"
+      }
+    ],
+    "scope": "Controlled token strings through the filter used by /api/chat; this verifies label allowlisting, not claim-level entailment."
+  },
+  "tool_policy_and_escalation": {
+    "checks": [
+      {
+        "id": "sdk-version-support",
+        "passed": true,
+        "confidence": "High confidence",
+        "escalation_recommended": false,
+        "tool_proposed": "check_supported_sdk_version",
+        "destructive_refusal": false,
+        "rejected_execution_result": true
+      },
+      {
+        "id": "destructive-refusal",
+        "passed": true,
+        "confidence": "High confidence",
+        "escalation_recommended": true,
+        "tool_proposed": null,
+        "destructive_refusal": true,
+        "rejected_execution_result": null
+      },
+      {
+        "id": "out-of-corpus-escalation",
+        "passed": true,
+        "confidence": "Low confidence",
+        "escalation_recommended": true,
+        "tool_proposed": "create_escalation_summary",
+        "destructive_refusal": false,
+        "rejected_execution_result": true
+      }
+    ],
+    "passed": 3,
+    "total": 3
+  },
+  "response_latency": {
+    "status": "measured",
+    "sample_size": 3,
+    "first_token_ms": {
+      "median": 309.473,
+      "max": 736.257
+    },
+    "completion_ms": {
+      "median": 2529.735,
+      "max": 3272.738
+    },
+    "samples": [
+      {
+        "id": "trace-header-purpose",
+        "first_token_ms": 736.257,
+        "completion_ms": 2529.735
+      },
+      {
+        "id": "trace-target-configuration",
+        "first_token_ms": 309.473,
+        "completion_ms": 3272.738
+      },
+      {
+        "id": "source-map-error-code",
+        "first_token_ms": 243.868,
+        "completion_ms": 677.703
+      }
+    ],
+    "caveat": "Measured through local FastAPI HTTP/SSE with reranking disabled. It includes local retrieval and Ollama generation, but is not a hosted-model or production-load benchmark.",
+    "warm_cold_note": "The API process was already running. These are warm-process measurements; a separate clean-server/model-load cold-start benchmark was not run."
+  }
+}

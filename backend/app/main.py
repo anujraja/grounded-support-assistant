@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from .audit import AuditLog
+from .citations import filter_citation_labels, finish_citation_filter
 from .confidence import calculate_confidence
 from .config import SAMPLE_DOCS, settings
 from .generation import stream_ollama
@@ -204,30 +205,14 @@ async def chat(request: ChatRequest) -> StreamingResponse:
                 pending_citation = ""
                 citation_seen = False
                 async for token in stream_ollama(request.question, chunks):
-                    safe_token = ""
-                    for character in token:
-                        if not pending_citation:
-                            if character == "[":
-                                pending_citation = character
-                            else:
-                                safe_token += character
-                        elif character.isdigit():
-                            pending_citation += character
-                        elif character == "]" and len(pending_citation) > 1:
-                            citation_number = int(pending_citation[1:])
-                            if 1 <= citation_number <= len(chunks):
-                                safe_token += f"[{citation_number}]"
-                                citation_seen = True
-                            else:
-                                safe_token += "[unsupported citation removed]"
-                            pending_citation = ""
-                        else:
-                            safe_token += pending_citation + character
-                            pending_citation = ""
+                    safe_token, pending_citation, token_citation_seen = filter_citation_labels(
+                        token, len(chunks), pending_citation
+                    )
+                    citation_seen = citation_seen or token_citation_seen
                     if safe_token:
                         yield sse("token", safe_token)
                 if pending_citation:
-                    yield sse("token", pending_citation)
+                    yield sse("token", finish_citation_filter(pending_citation))
                 if chunks and not citation_seen:
                     yield sse("token", "\n\nSupporting evidence: [1]")
             yield sse("done", {"audit_id": audit.id})

@@ -340,7 +340,7 @@ def test_chat_stream_emits_traceable_citations_and_destructive_refusal(client, m
     ]
 
     async def fake_stream(question: str, retrieved_chunks: list[RetrievedChunk]):
-        yield "Verified answer [1]"
+        yield "Verified answer [1] and unsupported [99]"
 
     monkeypatch.setattr("app.main.retriever.retrieve", lambda question, top_k: (chunks, {"vector_top_ids": ["chunk-1"], "bm25_top_ids": ["chunk-1"], "agreement": 1.0}))
     monkeypatch.setattr("app.main.reranker.rerank", lambda question, retrieved_chunks, enabled: retrieved_chunks)
@@ -372,6 +372,46 @@ def test_chat_stream_emits_traceable_citations_and_destructive_refusal(client, m
     assert meta["retrieval"][0]["id"] == "chunk-1"
     assert meta["retrieval"][0]["text"] == "Keep the sdk at 8.25.0 for this integration."
     assert "I can’t perform or propose that destructive action" in token
+
+
+def test_chat_stream_removes_model_citation_labels_not_assigned_by_the_server(client, monkeypatch):
+    chunks = [make_chunk("chunk-1", "Evidence", final_rank=1)]
+
+    async def fake_stream(question: str, retrieved_chunks: list[RetrievedChunk]):
+        yield "Valid [1], invalid [99]"
+
+    monkeypatch.setattr("app.main.retriever.retrieve", lambda question, top_k: (chunks, {"vector_top_ids": ["chunk-1"], "bm25_top_ids": ["chunk-1"], "agreement": 1.0}))
+    monkeypatch.setattr("app.main.reranker.rerank", lambda question, retrieved_chunks, enabled: retrieved_chunks)
+    monkeypatch.setattr("app.main.stream_ollama", fake_stream)
+    monkeypatch.setattr("app.main.tool_registry", ToolRegistry())
+    monkeypatch.setattr("app.main.audit_log", types.SimpleNamespace(add=lambda event: event, update_tool=lambda proposal_id, approved, result: None))
+
+    response = client.post("/api/chat", json={"question": "What is supported?", "rerank": False})
+    events = parse_sse(response.text)
+    token = next(payload for event, payload in events if event == "token")
+
+    assert "[1]" in token
+    assert "[99]" not in token
+    assert "[unsupported citation removed]" in token
+
+
+def test_chat_stream_does_not_flush_an_incomplete_unassigned_citation_label(client, monkeypatch):
+    chunks = [make_chunk("chunk-1", "Evidence", final_rank=1)]
+
+    async def fake_stream(question: str, retrieved_chunks: list[RetrievedChunk]):
+        yield "Incomplete [99"
+
+    monkeypatch.setattr("app.main.retriever.retrieve", lambda question, top_k: (chunks, {"vector_top_ids": ["chunk-1"], "bm25_top_ids": ["chunk-1"], "agreement": 1.0}))
+    monkeypatch.setattr("app.main.reranker.rerank", lambda question, retrieved_chunks, enabled: retrieved_chunks)
+    monkeypatch.setattr("app.main.stream_ollama", fake_stream)
+    monkeypatch.setattr("app.main.tool_registry", ToolRegistry())
+    monkeypatch.setattr("app.main.audit_log", types.SimpleNamespace(add=lambda event: event, update_tool=lambda proposal_id, approved, result: None))
+
+    response = client.post("/api/chat", json={"question": "What is supported?", "rerank": False})
+    tokens = [payload for event, payload in parse_sse(response.text) if event == "token"]
+
+    assert "[99" not in "".join(tokens)
+    assert "[unsupported citation removed]" in tokens
 
 
 def test_tools_propose_endpoint_accepts_low_confidence_payload(client):

@@ -25,6 +25,19 @@ Many RAG demos stop at a chat box. This project makes the parts that matter in s
 - low-confidence cases recommend a human support engineer;
 - retrieval, approval, confidence, and escalation decisions appear in an audit trail.
 
+## Evidence at a glance
+
+The checked-in evaluation is intentionally small and fictional, but it is rerunnable and records its own machine, model, corpus, and run-mode caveats. See the [full public report](docs/evaluation-report.md) for the exact source data.
+
+| Evidence | Latest checked-in local result | Scope |
+| --- | --- | --- |
+| Hybrid retrieval | Semantic, BM25, and fused Hit@1/Hit@3: **1.000** | 5 labelled cases, 17-chunk fictional corpus |
+| Citation boundary | **10/10** controlled checks; 0 unsupported labels rendered | Server-owned numeric-label allowlisting, not claim entailment |
+| Tool policy + escalation | **3/3** expected outcomes | Denied execution, destructive refusal, and low-confidence escalation |
+| Local response timing | Median first token **309.473 ms**; completion **2529.735 ms** | 3 warm FastAPI/Ollama SSE samples; reranking disabled |
+
+These figures are not production, clean-start, hosted-model, or user-traffic benchmarks. The [truth handoff](docs/evaluation-truth.md) lists the exact resume-safe facts and the qualifiers that must travel with them.
+
 ## Architecture at a glance
 
 ```mermaid
@@ -105,7 +118,10 @@ The full operator script and fallback plan are in [Demo guide](docs/demo-guide.m
 - [Architecture](docs/architecture.md): context, containers, components, sequences, and failure modes
 - [Design decisions](docs/design-decisions.md): compact architecture decision records and tradeoffs
 - [Security model](docs/security.md): trust boundaries, threats, mitigations, and POC gaps
-- [Evaluation strategy](docs/evaluation.md): retrieval, citation, safety, latency, and regression criteria
+- [Evaluation strategy](docs/evaluation.md): methodology and scope for the reproducible evaluation harness
+- [Public evaluation report](docs/evaluation-report.md): current local measurements, caveats, failures, and rerun commands
+- [Machine-readable evaluation results](docs/evaluation-results.json): corpus/model/configuration metadata beside every measurement
+- [Evaluation truth handoff](docs/evaluation-truth.md): verified, resume-safe statements and qualifiers
 - [API and streaming contract](docs/api.md): endpoints, SSE events, and approval lifecycle
 - [Engineering case study](docs/case-study.md): problem framing, constraints, implementation, and next steps
 - [Demo guide](docs/demo-guide.md): the interview runbook and troubleshooting path
@@ -133,6 +149,22 @@ docker compose config --quiet
 ```
 
 The test suite covers chunking, duplicate ingestion, exact BM25 terms, score fusion, citation integrity, strict tool schemas, explicit approval, low-confidence escalation, and destructive-request refusal. GitHub Actions runs backend tests and the frontend production build independently.
+
+## Reproduce the evaluation
+
+The version-controlled fictional evaluation set lives in [`backend/evaluation/cases.json`](backend/evaluation/cases.json). It evaluates semantic, BM25, and fused retrieval ranking; the server citation-label boundary; deterministic tool approval policy; and low-confidence escalation.
+
+```bash
+conda run -n grounded-support-assistant python backend/scripts/run_evaluation.py
+```
+
+With the local API and Ollama running, record a warm-process end-to-end HTTP/SSE sample too:
+
+```bash
+conda run -n grounded-support-assistant python backend/scripts/run_evaluation.py --api-url http://127.0.0.1:8010
+```
+
+Do not compare the local figures with hosted models: this repository implements only local Ollama generation and does not fabricate hosted measurements.
 
 ## Safety boundaries and limitations
 
