@@ -2,6 +2,8 @@
 
 The FastAPI service owns retrieval, citation numbering, confidence, tool policy, and audit state. The browser is a renderer and approval surface; it does not create evidence or execute tools directly.
 
+Figures below are markdown-graphs ASCII twins (dashed `[ TITLE ]` frames). Live colored graphs live in the book at [anuj-markdown-graphs](https://github.com/anujraja/anuj-markdown-graphs).
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -16,6 +18,33 @@ The FastAPI service owns retrieval, citation numbering, confidence, tool policy,
 | `GET` | `/api/audit` | Return the local redacted audit trail |
 
 Interactive request and response schemas are available at `/docs` while the backend is running.
+
+```routes
++----------------------- [ ROUTES ] ----------------------+
+| verb   path          does                               |
+| GET    /health       chroma + ollama                    |
+| POST   /ingest       sample docs                        |
+| POST   /upload       one utf-8 file                     |
+| POST   /chat         sse cited                          |
+| POST   /propose      allowlisted                        |
+| POST   /execute      approve once                       |
+| GET    /documents    indexed files                      |
+| GET    /audit        redacted log                       |
++---------------------------------------------------------+
+```
+
+The workbench talks HTTP and SSE. Citation numbers, retrieval scores, and tool proposals are assigned on the server before any token is drawn.
+
+```owner
++----------------------- [ OWNER ] -----------------------+
+| browser     renderer + approval tab                     |
+| fastapi     retrieval, cites, policy                    |
+| tools       only after a human yes                      |
+| audit       in-memory, redacted                         |
+| chroma      chunks + vectors                            |
+| ollama      tokens, never tools                         |
++---------------------------------------------------------+
+```
 
 ## Chat request
 
@@ -37,6 +66,23 @@ Interactive request and response schemas are available at `/docs` while the back
 3. `error`: a safe error description when retrieval or generation fails.
 4. `done`: the terminal event, normally carrying the audit ID.
 
+```events
++----------------------- [ EVENTS ] ----------------------+
+| 1  meta: cites, scores, proposal            done        |
+| 2  token: ollama fragments                  now         |
+| 3  error: safe description                  next        |
+| 4  done: audit id                           next        |
++---------------------------------------------------------+
+```
+
+```stream
++----------------------- [ STREAM ] ----------------------+
+| question → /api/chat                                    |
+| meta cites → token stream                               |
+| cite guard → done                                       |
++---------------------------------------------------------+
+```
+
 Example framing:
 
 ```text
@@ -54,26 +100,29 @@ The server accepts only citation numbers that correspond to the retrieved chunk 
 
 ## Tool lifecycle
 
-```mermaid
-sequenceDiagram
-    participant UI as React workbench
-    participant API as FastAPI
-    participant Registry as Tool registry
-    participant Tool as Deterministic function
-    participant Audit as Audit log
+The registry stores an allowlisted proposal. The UI sees the id, arguments, and reason. Execute takes that id and a boolean. Rejected tools never run. Approved tools pass `extra="forbid"` schemas into a deterministic local function. Then audit.
 
-    API->>Registry: Store allowlisted proposal
-    API-->>UI: Proposal ID, arguments, reason
-    UI->>API: Execute(proposal ID, approved)
-    API->>Registry: Validate stored and undecided
-    alt rejected
-        Registry-->>API: No result
-    else approved
-        Registry->>Tool: Strictly validated arguments
-        Tool-->>Registry: Deterministic result
-    end
-    API->>Audit: Record decision and result
-    API-->>UI: Decision response
+```life
++------------------------ [ LIFE ] -----------------------+
+| store proposal → show in ui                             |
+| approve → or reject                                     |
+| schema check → local function                           |
+| audit write → response                                  |
++---------------------------------------------------------+
+```
+
+Unknown ids, a second decision, unknown tool names, and surprise arguments all 400.
+
+```deny
++------------------------ [ DENY ] -----------------------+
+| + stored proposal     required                          |
+|   one decision        required                          |
+|   strict schema       forbid extra                      |
+| − unknown id          400                               |
+| − already decided     400                               |
+| − extra args          422                               |
+|   decisions           once                              |
++---------------------------------------------------------+
 ```
 
 A proposal can be decided once. Unknown proposal IDs, repeated decisions, unknown tool names, and unexpected arguments are rejected.
@@ -86,3 +135,15 @@ A proposal can be decided once. Unknown proposal IDs, repeated decisions, unknow
 - Invalid Pydantic request: `422`
 - Invalid or already-decided tool proposal: `400`
 - Ollama/retrieval failure during chat: streamed `error`, followed by `done`
+
+```codes
++----------------------- [ CODES ] -----------------------+
+|                    status                               |
+| not .md/.txt       415                                  |
+| over 2 mb          413                                  |
+| not utf-8          400                                  |
+| bad schema         422                                  |
+| bad proposal       400                                  |
+| ollama fail        sse error                            |
++---------------------------------------------------------+
+```
