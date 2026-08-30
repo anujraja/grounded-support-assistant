@@ -2,6 +2,8 @@
 
 This document records the decisions that make Grounded Support Assistant explainable as an interview project. Each decision is intentionally scoped to a local proof-of-concept, not a production support platform.
 
+Figures below are markdown-graphs ASCII twins (dashed `[ TITLE ]` frames). Live colored graphs live in [anuj-markdown-graphs](https://github.com/anujraja/anuj-markdown-graphs).
+
 ## ADR 001: Use Explicit Application Code Instead Of LangChain
 
 ### Status
@@ -24,6 +26,26 @@ The project needs to demonstrate ingestion, hybrid retrieval, citation integrity
 ### Decision
 
 Use explicit application code. The deciding factor is explainability: every important behavior is inspectable without teaching an agent framework first.
+
+```code
++------------------------ [ CODE ] -----------------------+
+|                 explicit           langchain            |
+| inspectable     ✓                  –                    |
+| small files     ✓                  –                    |
+| interview       ✓                  –                    |
+| swap vendor     –                  ✓                    |
+| less code       –                  ✓                    |
++---------------------------------------------------------+
+```
+
+```why
++------------------------ [ WHY ] ------------------------+
+| explainability  ====================  10                |
+| interview map   ==================     9                |
+| safety review   ================       8                |
+| provider swap   =                      3                |
++---------------------------------------------------------+
+```
 
 ### Consequences
 
@@ -56,6 +78,22 @@ Support questions mix natural language with exact technical strings such as `sen
 ### Decision
 
 Use hybrid score fusion: normalize vector and BM25 scores, combine them with a weighted average, deduplicate by chunk id, and expose raw and fused scores.
+
+```search
++----------------------- [ SEARCH ] ----------------------+
+|              vector     bm25      hybrid                |
+| paraphrase   ✓          –         ✓                     |
+| error code   –          ✓         ✓                     |
+| version pin  –          ✓         ✓                     |
+| debug scores –          –         ✓                     |
++---------------------------------------------------------+
+```
+
+```blend
++----------------------- [ BLEND ] -----------------------+
+| fused   ███████████ vector 55   ▓▓▓▓▓▓▓▓▓ bm25 45       |
++---------------------------------------------------------+
+```
 
 ### Consequences
 
@@ -114,6 +152,27 @@ The UI must never show citations that were not retrieved. The model may emit uns
 ### Decision
 
 The backend assigns citation numbers from retrieved chunks, sends source cards in SSE metadata, filters unsupported citation numbers from streamed tokens, and appends a supporting citation when a grounded answer omits one.
+
+```infer
++----------------------- [ INFER ] -----------------------+
+|                 ollama             hosted               |
+| no keys         ✓                  –                    |
+| offline         ✓                  –                    |
+| fail closed     ✓                  –                    |
+| quality         local              higher               |
+| setup           download           api                  |
++---------------------------------------------------------+
+```
+
+```cites
++----------------------- [ CITES ] -----------------------+
+| + server assigns ids        retrieved                   |
+| + filter invented [n]       stream                      |
+| + append [1] if omitted     grounded                    |
+| − model-owned cites         out                         |
+| − prompt-only honesty       out                         |
++---------------------------------------------------------+
+```
 
 ### Consequences
 
@@ -262,6 +321,29 @@ The project imitates observability support workflows but must not claim to be of
 ### Decision
 
 Use fictional sample documents with repeated disclaimers.
+
+```gates
++----------------------- [ GATES ] -----------------------+
+|                 now                later                |
+| rerank          optional           required             |
+| confidence      heuristic          calibrated           |
+| tools           human gate         rbac                 |
+| audit           memory             postgres             |
+| docs            fictional          licensed             |
++---------------------------------------------------------+
+```
+
+```keep
++------------------------ [ KEEP ] -----------------------+
+|   fail-open rerank       in                             |
+|   heuristic label        in                             |
+|   three local tools      in                             |
+|   in-memory audit        in                             |
+|   fictional corpus       in                             |
+| − real customer data     out                            |
+| − model-run tools        out                            |
++---------------------------------------------------------+
+```
 
 ### Consequences
 
