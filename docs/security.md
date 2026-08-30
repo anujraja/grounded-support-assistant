@@ -2,6 +2,8 @@
 
 This document describes the current security posture of the proof-of-concept. It is not a claim of full assurance. The scope here is the implemented local demo in this repository.
 
+Figures below are markdown-graphs ASCII twins (dashed `[ TITLE ]` frames). Live colored graphs live in [anuj-markdown-graphs](https://github.com/anujraja/anuj-markdown-graphs).
+
 ## Scope analyzed
 
 - FastAPI endpoints in `backend/app/main.py`
@@ -18,6 +20,16 @@ This document describes the current security posture of the proof-of-concept. It
 4. Avoid accidental leakage of secrets into audit output.
 5. Fail safely when dependencies are missing or degraded.
 
+```goals
++----------------------- [ GOALS ] -----------------------+
+| autonomy     model never executes                       |
+| destroy      no such tool exists                        |
+| cites        retrieved chunks only                      |
+| secrets      redact before audit                        |
+| deps         fail closed or skip                        |
++---------------------------------------------------------+
+```
+
 ## Trust boundaries
 
 | Boundary | Trust level | Notes |
@@ -27,6 +39,17 @@ This document describes the current security posture of the proof-of-concept. It
 | Model output | Untrusted | The UI only renders streamed text and backend-filtered citations. |
 | Tool execution | Trusted only after approval | Backend requires a stored proposal and strict schema validation. |
 | Audit log | Trusted local state | In-memory only; redaction exists but persistence and auth are intentionally absent. |
+
+```trust
++----------------------- [ TRUST ] -----------------------+
+| surface      trust                                      |
+| question     untrusted                                  |
+| upload       untrusted                                  |
+| model text   untrusted                                  |
+| tool run     after yes                                  |
+| audit log    local                                      |
++---------------------------------------------------------+
+```
 
 ## Assets worth protecting
 
@@ -105,6 +128,25 @@ Current mitigation:
 Residual risk:
 - The corpus can still contain misleading or poor-quality text because document trust is a product-level problem, not a parser-level one.
 
+```inject
++----------------------- [ INJECT ] ----------------------+
+| prompt text → no execute                                |
+| proposal id → human yes                                 |
+| schema check → local fn                                 |
++---------------------------------------------------------+
+```
+
+```block
++----------------------- [ BLOCK ] -----------------------+
+| + stored proposal       required                        |
+| + extra=forbid          schema                          |
+| + destructive none      refuse                          |
+| + cite number guard     stream                          |
+| − model-run tools       blocked                         |
+| − delete / purge        blocked                         |
++---------------------------------------------------------+
+```
+
 ## Security controls mapped to code
 
 | Control | Location | Type |
@@ -118,6 +160,18 @@ Residual risk:
 | Audit redaction | `backend/app/audit.py` | Detective + preventive |
 | Duplicate-ingestion hashing | `backend/app/ingestion.py` | Integrity |
 
+```lock
++------------------------ [ LOCK ] -----------------------+
+| control           type                                  |
+| strict schema     prevent                               |
+| one-shot decide   prevent                               |
+| cite guard        prevent                               |
+| health degrade    detect                                |
+| audit redact      detect                                |
+| hash ingest       integrity                             |
++---------------------------------------------------------+
+```
+
 ## Security gaps that are intentionally left open
 
 These are acceptable for an interview POC, but they are real gaps:
@@ -129,6 +183,18 @@ These are acceptable for an interview POC, but they are real gaps:
 5. No content moderation or prompt-injection scoring beyond narrow tool boundaries.
 6. No persistent tamper-evident audit store.
 7. No tenant isolation because the corpus is single-user and local.
+
+```gaps
++------------------------ [ GAPS ] -----------------------+
+|                    poc     prod                         |
+| auth               –       ✓                            |
+| durable audit      –       ✓                            |
+| rate limit         –       ✓                            |
+| csrf / session     –       ✓                            |
+| tenants            –       ✓                            |
+| tool gate          ✓       ✓                            |
++---------------------------------------------------------+
+```
 
 ## Recommended next steps
 
@@ -149,6 +215,26 @@ These are acceptable for an interview POC, but they are real gaps:
 1. Add richer prompt-injection analytics for research visibility.
 2. Add provenance UI around uploaded versus bundled documents.
 
+```next
++------------------------ [ NEXT ] -----------------------+
+| operator identity     =====================  high       |
+| durable audit         ====================   high       |
+| rate limits           ==================     high       |
+| cite faithfulness     ==========             mid        |
+| secret scrub tests    ========               mid        |
+| injection analytics   ====                   low        |
++---------------------------------------------------------+
+```
+
 ## Bottom line
 
 For a demo, the most important security property is present: the model cannot directly execute tools, and destructive operations are not available. The largest remaining risks are around missing authentication, non-durable audit storage, and heuristic rather than formal policy enforcement.
+
+```risk
++------------------------ [ RISK ] -----------------------+
+| tools      gated     human yes required                 |
+| destroy    absent    not on allowlist                   |
+| auth       none      interview poc                      |
+| audit      memory    lost on restart                    |
++---------------------------------------------------------+
+```
