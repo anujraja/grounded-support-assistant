@@ -4,72 +4,42 @@ Grounded Support Assistant is a local proof-of-concept for evidence-first techni
 
 The architecture is optimized for interview clarity. Retrieval, citations, confidence, tool approval, and audit events are server-owned so the demo can explain where each grounded answer came from and why a risky action was not executed automatically.
 
+Figures below are markdown-graphs ASCII twins (dashed `[ TITLE ]` frames). Live colored graphs live in [anuj-markdown-graphs](https://github.com/anujraja/anuj-markdown-graphs).
+
 ## System Context
 
-```mermaid
-flowchart LR
-  Operator["Support operator / interviewer"]
-  Browser["React evidence workbench<br/>localhost:5173"]
-  API["FastAPI support API<br/>localhost:8010 or container:8000"]
-  Docs["Fictional Markdown docs<br/>sample_docs + uploads"]
-  Chroma["ChromaDB persistent collection<br/>backend/data/chroma or Docker volume"]
-  Embeddings["Sentence Transformers<br/>local embedding model"]
-  Reranker["Optional CrossEncoder reranker<br/>local model, graceful fallback"]
-  Ollama["Ollama local LLM<br/>qwen2.5:3b by default"]
-  Audit["In-memory audit log<br/>demo process state"]
+The operator asks questions and signs tools in the React evidence workbench. The browser talks HTTP and SSE to FastAPI. Docs, vectors, embeddings, optional reranker, and Ollama all sit next to the API.
 
-  Operator -->|"asks questions, approves tools"| Browser
-  Browser -->|"HTTP + streaming SSE"| API
-  API -->|"reads / ingests"| Docs
-  API -->|"stores chunks and vectors"| Chroma
-  API -->|"embeds docs and queries"| Embeddings
-  API -->|"optionally reranks candidates"| Reranker
-  API -->|"streams prompt responses"| Ollama
-  API -->|"records questions, chunk ids, decisions"| Audit
-  Browser -->|"renders citations, retrieval scores, audit"| Operator
+```context
++---------------------- [ CONTEXT ] ----------------------+
+| operator → react workbench                              |
+| fastapi → chromadb                                      |
+| ollama → audit log                                      |
++---------------------------------------------------------+
 ```
 
-## Container Boundaries
+Frontend is a three-pane workbench. Backend modules stay small on purpose.
 
-```mermaid
-flowchart TB
-  subgraph Frontend["frontend/ React + TypeScript + Vite"]
-    UI["App.tsx<br/>three-pane evidence workbench"]
-    APIClient["src/lib/api.ts<br/>fetch, upload, SSE parser"]
-    CSS["index.css<br/>plain CSS visual system"]
-  end
-
-  subgraph Backend["backend/app FastAPI"]
-    Main["main.py<br/>HTTP endpoints + SSE orchestration"]
-    Ingestion["ingestion.py<br/>chunking, hashing, Chroma persistence"]
-    Retrieval["retrieval.py<br/>vector + BM25 fusion"]
-    Reranking["reranking.py<br/>optional cross-encoder"]
-    Generation["generation.py<br/>Ollama prompt + stream"]
-    Confidence["confidence.py<br/>POC confidence heuristic"]
-    Tools["tools.py<br/>allowlist + strict schemas + approval registry"]
-    Audit["audit.py<br/>local redacted audit events"]
-    Models["models.py<br/>Pydantic contracts"]
-    Config["config.py<br/>environment settings"]
-  end
-
-  UI --> APIClient
-  APIClient -->|"GET /health, GET /api/documents"| Main
-  APIClient -->|"POST /api/chat SSE"| Main
-  APIClient -->|"POST /api/upload"| Main
-  APIClient -->|"POST /api/tools/execute"| Main
-
-  Main --> Ingestion
-  Main --> Retrieval
-  Main --> Reranking
-  Main --> Confidence
-  Main --> Generation
-  Main --> Tools
-  Main --> Audit
-  Main --> Models
-  Main --> Config
+```stack
++----------------------- [ STACK ] -----------------------+
+| grounded support                                        |
+| ├─ frontend/                                            |
+| │  ├─ App.tsx                 three panes               |
+| │  ├─ api.ts                  sse parser                |
+| │  └─ index.css               plain css                 |
+| └─ backend/app                                          |
+|    ├─ main.py                 sse + cites               |
+|    ├─ ingestion.py            chunk + hash              |
+|    ├─ retrieval.py            vector + bm25             |
+|    ├─ generation.py           ollama stream             |
+|    ├─ tools.py                allowlist                 |
+|    └─ audit.py                in-memory                 |
++---------------------------------------------------------+
 ```
 
 ## Data Ownership
+
+Chunks, embeddings, citation numbers, tool proposals, and the audit trail are not invented in the browser. Demo content is fictional. Uploaded text is chunked immediately. The BM25 corpus is rebuilt in memory from stored chunks so error codes and version pins stay retrievable.
 
 | Data | Owner | Stored in | Notes |
 | --- | --- | --- | --- |
@@ -81,92 +51,93 @@ flowchart TB
 | Tool proposals | `ToolRegistry` | In-memory process state | A proposal must exist before execution and can be decided only once. |
 | Audit trail | `AuditLog` | In-memory process state | Redacted local demo log, not durable compliance storage. |
 
+```data
++------------------------ [ DATA ] -----------------------+
+| data             owner              stored              |
+| documents        sample_docs        files               |
+| chunks           DocumentStore      chroma              |
+| embeddings       DocumentStore      chroma              |
+| bm25 corpus      HybridRetriever    memory              |
+| citations        main.py            response            |
+| tool proposals   ToolRegistry       memory              |
+| audit trail      AuditLog           memory              |
++---------------------------------------------------------+
+```
+
 ## Critical Flow: Ingestion
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant User as Operator
-  participant UI as React workbench
-  participant API as FastAPI /api/ingest or /api/upload
-  participant Store as DocumentStore
-  participant Embed as Sentence Transformers
-  participant Chroma as ChromaDB
+Ingest hits `/api/ingest` or `/api/upload`. A SHA-256 content hash skips duplicates. Chunks follow headings and overlap. Sentence Transformers embed locally. Chroma keeps ids, text, metadata, and vectors. The UI only needs counts back. No model is called on this path.
 
-  User->>UI: Click ingest samples or upload .md/.txt
-  UI->>API: POST /api/ingest or POST /api/upload
-  API->>Store: ingest_paths() or ingest_text()
-  Store->>Store: SHA-256 document hash duplicate check
-  Store->>Store: Heading-aware overlapping chunks
-  Store->>Embed: Embed chunk text locally
-  Embed-->>Store: Normalized vectors
-  Store->>Chroma: Add ids, text, metadata, embeddings
-  Chroma-->>Store: Persisted chunks
-  Store-->>API: Ingested and skipped counts
-  API-->>UI: IngestResponse
+```ingest
++----------------------- [ INGEST ] ----------------------+
+| upload markdown → hash skip                             |
+| heading chunks → local embed                            |
+| chroma persist → ingest counts                          |
++---------------------------------------------------------+
+```
+
+```steps
++----------------------- [ STEPS ] -----------------------+
+| 1  click ingest samples or upload           done        |
+| 2  hash duplicate check                     done        |
+| 3  heading-aware overlapping chunks         done        |
+| 4  embed locally, write chroma              now         |
+| 5  return ingested / skipped counts         next        |
++---------------------------------------------------------+
 ```
 
 ## Critical Flow: Grounded Chat
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant User as Operator
-  participant UI as React workbench
-  participant API as FastAPI /api/chat
-  participant Retriever as HybridRetriever
-  participant Reranker as OptionalReranker
-  participant Conf as Confidence heuristic
-  participant Tools as Tool proposal logic
-  participant LLM as Ollama
-  participant Audit as AuditLog
+A question goes to `/api/chat`. Hybrid retrieval (vector + BM25) returns deduped chunks and debug scores. The cross-encoder reranks in a worker thread and fails open. Confidence is an explainable heuristic, then a tool may be proposed, then Ollama streams against retrieved evidence only.
 
-  User->>UI: Submit support question
-  UI->>API: POST /api/chat
-  API->>Retriever: Vector search + BM25 search
-  Retriever-->>API: Deduped ranked chunks + debug scores
-  API->>Reranker: Optional rerank in worker thread
-  Reranker-->>API: Reranked chunks or original order
-  API->>Conf: Calculate explainable confidence
-  API->>Tools: Propose allowed tool if question warrants it
-  API->>Audit: Record question, chunk ids, confidence, proposal
-  API-->>UI: SSE meta event with citations, retrieval, confidence, tool proposal
-  API->>LLM: Prompt with retrieved evidence only
-  LLM-->>API: Streaming tokens
-  API->>API: Strip unsupported citation numbers
-  API-->>UI: SSE token events
-  API-->>UI: SSE done event
+Citation numbers the model invents are stripped before render. The meta SSE event carries citations, retrieval, confidence, and any tool proposal before tokens start.
+
+```chat
++------------------------ [ CHAT ] -----------------------+
+| question → hybrid retrieve                              |
+| optional rerank → confidence                            |
+| tool propose → ollama stream                            |
++---------------------------------------------------------+
+```
+
+```stream
++----------------------- [ STREAM ] ----------------------+
+| question    ████████████████████            1     |
+| retrieve    ████████                          n     |
+| rerank      █████                             k     |
+| tokens      ███                               sse   |
+| cited       ██                                ok    |
++---------------------------------------------------------+
 ```
 
 ## Critical Flow: Tool Approval
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant User as Operator
-  participant UI as Tool approval tab
-  participant API as FastAPI /api/tools/execute
-  participant Registry as ToolRegistry
-  participant Tool as Deterministic local function
-  participant Audit as AuditLog
+The approval tab shows the proposed tool, args, and reason. `/api/tools/execute` takes a proposal id and a boolean. The registry validates the stored proposal and refuses a second decision. Rejected tools never run. Approved tools pass a strict Pydantic schema into a deterministic local function.
 
-  UI-->>User: Show proposed tool, args, and reason
-  User->>UI: Approve or reject
-  UI->>API: POST /api/tools/execute { proposal_id, approved }
-  API->>Registry: Validate stored proposal and one-time decision
-  alt Rejected
-    Registry-->>API: No execution result
-  else Approved
-    Registry->>Registry: Strict Pydantic argument validation
-    Registry->>Tool: Execute allowlisted deterministic function
-    Tool-->>Registry: Result
-    Registry-->>API: Result
-  end
-  API->>Audit: Record decision and result
-  API-->>UI: ToolDecisionResponse
+The allowlist is the complete execution authority. Unknown and destructive actions never reach the operator. Every decision is audited, including rejections.
+
+```gate
++------------------------ [ GATE ] -----------------------+
+| proposed tool → approval                                |
+| approve → or reject                                     |
+| schema check → local function                           |
++---------------------------------------------------------+
+```
+
+```allow
++----------------------- [ ALLOW ] -----------------------+
+| + version_check     schema                              |
+|   lookup_config     schema                              |
+|   search_docs       schema                              |
+| − delete_project    blocked                             |
+| − network call      blocked                             |
+|   executable        3                                   |
++---------------------------------------------------------+
 ```
 
 ## Module Contracts
+
+`main.py` orchestrates endpoints, streaming, citation assignment, and audit writes. It does not embed retrieval or tool logic. Ingestion does not call Ollama. Retrieval does not invent citations. Generation does not execute tools. Confidence does not claim calibration.
 
 | Module | Responsibility | Must not do |
 | --- | --- | --- |
@@ -179,7 +150,23 @@ sequenceDiagram
 | `tools.py` | Define the complete allowlist, strict schemas, proposal storage, and execution gate | Perform network, filesystem mutation, or production actions. |
 | `audit.py` | Redact and record local demo audit events | Store secrets or act as compliance-grade durable logging. |
 
+```duty
++------------------------ [ DUTY ] -----------------------+
+| module          does              must not              |
+| main.py         sse + cites       no retrieval          |
+| ingestion.py    chunk + hash      no ollama             |
+| retrieval.py    vector + bm25     no cites              |
+| reranking.py    optional model    not required          |
+| generation.py   grounded stream   no tools              |
+| confidence.py   heuristic         not calibrated        |
+| tools.py        allowlist         no network            |
+| audit.py        redact events     no secrets            |
++---------------------------------------------------------+
+```
+
 ## Failure Modes
+
+Ollama down: health is degraded and chat says so instead of inventing guidance. Reranker down: hybrid retrieval continues and exposes `reranker_error`. Empty hits: low confidence and a human. Duplicate upload: hash skip. Process restart: audit and proposals disappear — that boundary is part of the demo.
 
 | Failure | Current behavior | Portfolio talking point | Production hardening |
 | --- | --- | --- | --- |
@@ -189,6 +176,18 @@ sequenceDiagram
 | Unknown/destructive tool | Rejected by allowlist or no proposal generated | The model never receives execution authority | Auth, RBAC, signed approvals, immutable audit store. |
 | Duplicate document upload | Content hash skips duplicate ingestion | Deterministic ingestion behavior | Durable document registry and tenant-level versioning. |
 | Process restart | Audit/proposals disappear | Honest POC boundary | Postgres/SQLite audit table and persisted proposal state. |
+
+```fail
++------------------------ [ FAIL ] -----------------------+
+|                    now                 later            |
+| ollama down        fail closed         retry + probe    |
+| reranker miss      skip, expose error  cached model     |
+| weak retrieval     escalate            ticket route     |
+| bad tool           reject              rbac + signed    |
+| dup upload         hash skip           tenant versions  |
+| process restart    lost audit          postgres         |
++---------------------------------------------------------+
+```
 
 ## Extension Points
 
@@ -201,11 +200,17 @@ sequenceDiagram
 
 ## What This Architecture Does Not Try To Solve
 
-- Multi-tenant isolation
-- Production support queue integration
-- Real customer data ingestion
-- Autonomous remediation
-- Compliance-grade audit retention
-- Calibrated confidence scoring
-
 Those omissions are intentional for the proof-of-concept. The design keeps the important safety and retrieval decisions visible while avoiding infrastructure that would distract from the interview demonstration.
+
+```omit
++------------------------ [ OMIT ] -----------------------+
+|   local ollama default       in                         |
+|   human tool gate            in                         |
+|   server-owned cites         in                         |
+| − multi-tenant isolation     out                        |
+| − support queue              out                        |
+| − real customer data         out                        |
+| − autonomous remediation     out                        |
+| − compliance audit store     out                        |
++---------------------------------------------------------+
+```
